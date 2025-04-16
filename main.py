@@ -15,36 +15,32 @@ import os
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
-# Set up model directory (use /tmp for writable space in Streamlit Cloud)
+
+# 1. Set up a writable directory in /tmp
 MODEL_DIR = "/tmp/mediapipe_models"
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-# Model URLs (choose one based on your needs)
-MODEL_URLS = {
-    "lite": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-    "full": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task"
-}
+# 2. Environment variable to prevent automatic downloads
+os.environ['MEDIAPIPE_DISABLE_FILE_DOWNLOAD'] = '1'
 
+# 3. Manually download the model file if needed
+MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
+MODEL_PATH = os.path.join(MODEL_DIR, "pose_landmarker.task")
+
+if not os.path.exists(MODEL_PATH):
+    urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
+
+# 4. Initialize MediaPipe with the custom model path
 @st.cache_resource
-def load_pose_model(model_complexity=1):
-    # Choose model type
-    model_type = "lite" if model_complexity == 0 else "full"
-    model_path = os.path.join(MODEL_DIR, f"pose_landmarker_{model_type}.task")
-    
-    # Download if not exists
-    if not os.path.exists(model_path):
-        urllib.request.urlretrieve(MODEL_URLS[model_type], model_path)
-    
-    # Initialize with the downloaded model
-    base_options = python.BaseOptions(model_asset_path=model_path)
-    options = vision.PoseLandmarkerOptions(
-        base_options=base_options,
-        output_segmentation_masks=False)
-    return vision.PoseLandmarker.create_from_options(options)
+def get_pose_detector():
+    return mp.solutions.pose.Pose(
+        static_image_mode=False,
+        model_complexity=0,  # 0=lite, 1=full, 2=heavy
+        min_detection_confidence=0.5,
+        min_tracking_confidence=0.5
+    )
 
-# Initialize the detector
-pose_detector = load_pose_model(model_complexity=1)  # Use 0 for lite, 1 for full
-
+pose_detector = get_pose_detector()
 def play_alert():
     components.html(
         f"""
