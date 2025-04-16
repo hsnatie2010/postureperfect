@@ -1,5 +1,6 @@
 streamlit
 opencv-python-headless
-mediapipe==0.10.9
-pygame
+mediapipe==0.9.1
 google-generativeai
+matplotlib
+pillow
