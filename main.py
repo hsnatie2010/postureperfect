@@ -11,12 +11,19 @@ from PIL import Image
 import os
 import google.generativeai as genai
 import streamlit.components.v1 as components
-import pygame
 
-# Initialize pygame mixer for audio alerts
-pygame.init()
-pygame.mixer.init()
-alert_sound = pygame.mixer.Sound("alert.mp3")
+
+def play_alert():
+    components.html(
+        f"""
+        <audio autoplay>
+            <source src="alert.mp3" type="audio/mpeg">
+        </audio>
+        """,
+        height=0,
+    )
+
+
 ALERT_COOLDOWN = 3.0  # seconds between alerts
 
 # Constants
@@ -413,8 +420,8 @@ def main():
             # play alert (pygame example)
             current_time = time.time()
             if status != "Good Posture" and (current_time - st.session_state.last_alert_time > ALERT_COOLDOWN):
-                pygame.mixer.Sound.play(alert_sound)
-                st.session_state.last_alert_time = current_time
+              play_alert()
+              st.session_state.last_alert_time = current_time
 
             # log timestamp + status
             ts = time.time() - st.session_state.start_time
