@@ -15,32 +15,26 @@ import os
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
-
-# 1. Set up a writable directory in /tmp
+# Set up model directory
 MODEL_DIR = "/tmp/mediapipe_models"
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-# 2. Environment variable to prevent automatic downloads
-os.environ['MEDIAPIPE_DISABLE_FILE_DOWNLOAD'] = '1'
-
-# 3. Manually download the model file if needed
+# Download model
 MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
 MODEL_PATH = os.path.join(MODEL_DIR, "pose_landmarker.task")
 
 if not os.path.exists(MODEL_PATH):
     urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
 
-# 4. Initialize MediaPipe with the custom model path
 @st.cache_resource
-def get_pose_detector():
-    return mp.solutions.pose.Pose(
-        static_image_mode=False,
-        model_complexity=0,  # 0=lite, 1=full, 2=heavy
-        min_detection_confidence=0.5,
-        min_tracking_confidence=0.5
-    )
+def create_detector():
+    base_options = python.BaseOptions(model_asset_path=MODEL_PATH)
+    options = vision.PoseLandmarkerOptions(
+        base_options=base_options,
+        output_segmentation_masks=False)
+    return vision.PoseLandmarker.create_from_options(options)
 
-pose_detector = get_pose_detector()
+pose_detector = create_detector()
 def play_alert():
     components.html(
         f"""
