@@ -8,10 +8,36 @@ import queue
 import csv
 import matplotlib.pyplot as plt
 from PIL import Image
-import os
 import google.generativeai as genai
 import streamlit.components.v1 as components
+import urllib.request
+import os
 
+# Download model files at startup if they don't exist
+MODEL_DIR = "models"
+os.makedirs(MODEL_DIR, exist_ok=True)
+
+MODEL_URLS = {
+    "lite": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+    "full": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
+    "heavy": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task"
+}
+
+def download_models():
+    for name, url in MODEL_URLS.items():
+        path = os.path.join(MODEL_DIR, f"pose_landmarker_{name}.task")
+        if not os.path.exists(path):
+            urllib.request.urlretrieve(url, path)
+
+download_models()
+
+# Then initialize pose with the local path
+mp_pose.Pose(
+    model_complexity=1,
+    static_image_mode=False,
+    min_detection_confidence=0.5,
+    min_tracking_confidence=0.5
+)
 
 def play_alert():
     components.html(
