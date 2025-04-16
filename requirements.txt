@@ -1,5 +1,5 @@
 streamlit
-opencv-python-headless==4.7.0.72
+opencv-python-headless>=4.5.0
 mediapipe
 google-generativeai==0.8.4
 pillow
