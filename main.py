@@ -12,26 +12,38 @@ import google.generativeai as genai
 import streamlit.components.v1 as components
 import urllib.request
 import os
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 
-# Download model files first
-MODEL_DIR = "models"
+# Set up model directory (use /tmp for writable space in Streamlit Cloud)
+MODEL_DIR = "/tmp/mediapipe_models"
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-MODEL_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
-MODEL_PATH = os.path.join(MODEL_DIR, "pose_landmarker.task")
+# Model URLs (choose one based on your needs)
+MODEL_URLS = {
+    "lite": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+    "full": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task"
+}
 
-if not os.path.exists(MODEL_PATH):
-    urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
+@st.cache_resource
+def load_pose_model(model_complexity=1):
+    # Choose model type
+    model_type = "lite" if model_complexity == 0 else "full"
+    model_path = os.path.join(MODEL_DIR, f"pose_landmarker_{model_type}.task")
+    
+    # Download if not exists
+    if not os.path.exists(model_path):
+        urllib.request.urlretrieve(MODEL_URLS[model_type], model_path)
+    
+    # Initialize with the downloaded model
+    base_options = python.BaseOptions(model_asset_path=model_path)
+    options = vision.PoseLandmarkerOptions(
+        base_options=base_options,
+        output_segmentation_masks=False)
+    return vision.PoseLandmarker.create_from_options(options)
 
-# Initialize with custom model
-mp_pose = mp.solutions.pose
-pose = mp_pose.Pose(
-    static_image_mode=False,
-    model_complexity=1,  # 0=lite, 1=full, 2=heavy
-    enable_segmentation=False,
-    min_detection_confidence=0.5,
-    min_tracking_confidence=0.5
-)
+# Initialize the detector
+pose_detector = load_pose_model(model_complexity=1)  # Use 0 for lite, 1 for full
 
 def play_alert():
     components.html(
